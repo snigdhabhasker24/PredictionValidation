@@ -87,8 +87,6 @@ public class PredictionValidation {
 
 //Calculate average for hours in the window using the sum and n (count) values stored by hour
 	public void calculateAverage(){
-		//Object lastKey=sumByHour.keySet().toArray()[sumByHour.size()-1];
-		//Integer lastKeyInt=(Integer)lastKey;
 		int lastKeyInt=Integer.parseInt(actualValues.get(actualValues.size()-1)[0]);
 		int i,j,n=0;
 		double sum,avg;
