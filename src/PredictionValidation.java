@@ -11,6 +11,7 @@ import java.util.*;
 public class PredictionValidation {
 	private ArrayList<String[]> actualValues = new ArrayList<String[]>();
 	private ArrayList<String[]> predictedValues = new ArrayList<String[]>();
+//Hashmap to store sum of error values and their count for each	hour
 	private HashMap<Integer,HourValues> sumByHour=new HashMap<Integer,HourValues>();
 	private ArrayList<OutputValues> outputValuesList = new ArrayList<OutputValues>();
 	int window;
@@ -20,10 +21,8 @@ public class PredictionValidation {
 		predictionValidation.calculateHourlyValues();
 		predictionValidation.calculateAverage();
 		predictionValidation.writeOutput(args[3]);
-		//Collections.sort(outputValuesList, OutputValues.sortValues);  // To sort the values based on cost and drug names.
-		//topCostDrug.writeOutput(args[1]);    // Write the output to a file.
 	}
-	
+//Read the input files and store the values in arraylists	
 	public void readFile(String[] files){
 		String line = "";
 		try(BufferedReader br= new BufferedReader(new FileReader(files[0]))) {	
@@ -42,26 +41,26 @@ public class PredictionValidation {
 		}		
 		try(BufferedReader br= new BufferedReader(new FileReader(files[2]))) {			
 			window=Integer.parseInt(br.readLine());
-			System.out.println("Window="+window);
 		}catch (IOException e){
 			e.printStackTrace();
 		}
 	}
-	
+//Calculating sum of errors and their count for each hour, to directly find the average based on window size using these
+//values, to reduce computation
 	public void calculateHourlyValues(){
 		int j=0;
 		int flag;  //Flag will be zero until actual hour and stock values are matched with predicted ones
-		int prevHr=1; //Prev hour is used to enter values into HashMap once the hour value is different 
+		int prevHr=1; //Prev hour is used to enter values into HashMap once the hour value is changed
 		double sum=0;
 		int n=0;
 		double error;
-		for(int i=0;i<predictedValues.size();i++){
+		for(int i=0;i<predictedValues.size();i++){  //Iterating through predicted values
 			flag=0;
 			String[] predicted=predictedValues.get(i);
 			int predHr=Integer.parseInt(predicted[0]);
 			String predStock=predicted[1];
 			double predPrice=Double.parseDouble(predicted[2]);
-			if(prevHr!=predHr){
+			if(prevHr!=predHr){   
 				sumByHour.put(prevHr, new HourValues(sum,n));
 				sum=0;
 				n=0;
@@ -72,7 +71,7 @@ public class PredictionValidation {
 				int actHr=Integer.parseInt(actual[0]);
 				String actStock=actual[1];
 				double actPrice=Double.parseDouble(actual[2]);
-				if(predHr==actHr&&predStock.equalsIgnoreCase(actStock)){
+				if(predHr==actHr&&predStock.equalsIgnoreCase(actStock)){ //Checking if the hour and stock values are same
 					error=Math.abs(actPrice-predPrice);
 					j++;
 					flag=1;
@@ -84,16 +83,13 @@ public class PredictionValidation {
 			prevHr=predHr;
 		}
 		sumByHour.put(prevHr, new HourValues(sum,n));
-		for(int i:sumByHour.keySet()){ 
-			System.out.println(i);
-			System.out.println(sumByHour.get(i).getSum()+"   "+sumByHour.get(i).getN());
-		}
 	}
 
 //Calculate average for hours in the window using the sum and n (count) values stored by hour
 	public void calculateAverage(){
-		Object lastKey=sumByHour.keySet().toArray()[sumByHour.size()-1];
-		Integer lastKeyInt=(Integer)lastKey;
+		//Object lastKey=sumByHour.keySet().toArray()[sumByHour.size()-1];
+		//Integer lastKeyInt=(Integer)lastKey;
+		int lastKeyInt=Integer.parseInt(actualValues.get(actualValues.size()-1)[0]);
 		int i,j,n=0;
 		double sum,avg;
 		for(int k=1;k<=lastKeyInt-(window-1);k++){
@@ -106,18 +102,18 @@ public class PredictionValidation {
 					n+=sumByHour.get(i).getN();
 				}
 			}
-			System.out.println("Sum= "+sum+" n= "+n);
 			if(n==0){
 				outputValuesList.add(new OutputValues(k,j,"NA"));
 			}else{
 				avg=Math.round((sum/n)*100.0)/100.0;
-				String formatted = String.format("%.2f", avg);
+				String formatted = String.format("%.2f", avg); //For two digits after the decimal
 				outputValuesList.add(new OutputValues(k,j,formatted));	
 			}			
 		}
 	}
-	//Method to write output to a file	
-		public void writeOutput(String path){
+	
+//Method to write output to a file	
+	public void writeOutput(String path){
 			FileWriter fw=null;
 			File file= new File(path);
 			try{
@@ -136,13 +132,14 @@ public class PredictionValidation {
 					bw.write(out.getStart()+"|"+out.getEnd()+"|"+out.getAvg());
 					bw.newLine();
 				}
-				System.out.println("Done. Please check the given output file for results.");
+				System.out.println("The result is stored in the comparison.txt file");
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 		}
 }
 
+//Class HourValues which is used to store sum and count values for each hour
 class HourValues{
 	double sum;
 	int n;
